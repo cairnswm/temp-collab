@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useEditor } from './EditorContext';
-import { Button, ButtonGroup, Navbar, Container, Badge } from 'react-bootstrap';
+import { Button, ButtonGroup, Navbar, Container, Badge, Form, ListGroup } from 'react-bootstrap';
 
 const Editor = () => {
   const editorRef = useRef();
-  const { ydoc, provider, ytext, status, users } = useEditor();
+  const { ydoc, provider, ytext, status, users, userId, username, setUsername } = useEditor();
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [tempUsername, setTempUsername] = useState(username);
   const [content, setContent] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -144,40 +146,110 @@ const Editor = () => {
     editorRef.current.focus();
   };
 
+  const handleUsernameSubmit = (e) => {
+    e.preventDefault();
+    if (tempUsername.trim()) {
+      setUsername(tempUsername.trim());
+      setEditingUsername(false);
+    }
+  };
+
   return (
     <div className="editor-wrapper">
       <Navbar bg="light" expand="lg" className="mb-3">
         <Container>
           <Navbar.Brand>Collaborative Editor</Navbar.Brand>
-          <Navbar.Text>
+          <Navbar.Text className="me-3">
             Status: <Badge bg={status === 'connected' ? 'success' : 'warning'}>{status}</Badge>
           </Navbar.Text>
+          
+          {editingUsername ? (
+            <Form onSubmit={handleUsernameSubmit} className="d-flex me-3">
+              <Form.Control
+                type="text"
+                value={tempUsername}
+                onChange={(e) => setTempUsername(e.target.value)}
+                placeholder="Enter username"
+                size="sm"
+                className="me-2"
+                autoFocus
+              />
+              <Button variant="primary" size="sm" type="submit">Save</Button>
+            </Form>
+          ) : (
+            <Navbar.Text className="me-3">
+              Username: {username} 
+              <Button 
+                variant="link" 
+                size="sm" 
+                onClick={() => {
+                  setTempUsername(username);
+                  setEditingUsername(true);
+                }}
+              >
+                Edit
+              </Button>
+            </Navbar.Text>
+          )}
+          
           <Navbar.Text>
             Users Online: {users.length}
           </Navbar.Text>
         </Container>
       </Navbar>
+      
+      <div className="d-flex">
+        <div className="flex-grow-1 me-3">
 
-      <div className="editor-toolbar">
-        <ButtonGroup>
-          <Button variant="outline-secondary" onClick={handleBold}>Bold</Button>
-          <Button variant="outline-secondary" onClick={handleItalic}>Italic</Button>
-          <Button variant="outline-secondary" onClick={handleUnderline}>Underline</Button>
-        </ButtonGroup>
-      </div>
+          <div className="editor-toolbar mb-2">
+            <ButtonGroup>
+              <Button variant="outline-secondary" onClick={handleBold}>Bold</Button>
+              <Button variant="outline-secondary" onClick={handleItalic}>Italic</Button>
+              <Button variant="outline-secondary" onClick={handleUnderline}>Underline</Button>
+            </ButtonGroup>
+          </div>
 
-      <div className="editor-container">
-        <div 
-          ref={editorRef} 
-          className="content-editable"
-          style={{ 
-            minHeight: '300px', 
-            border: '1px solid #ccc', 
-            borderRadius: '4px', 
-            padding: '10px',
-            outline: 'none'
-          }}
-        />
+          <div className="editor-container">
+            <div 
+              ref={editorRef} 
+              className="content-editable"
+              style={{ 
+                minHeight: '300px', 
+                border: '1px solid #ccc', 
+                borderRadius: '4px', 
+                padding: '10px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        </div>
+        
+        <div style={{ width: '200px' }}>
+          <h5>Connected Users</h5>
+          <ListGroup>
+            {users.length > 0 ? (
+              users.map((user) => (
+                <ListGroup.Item 
+                  key={user.userid || Math.random().toString(36).substring(2)}
+                  className="d-flex align-items-center"
+                >
+                  <div 
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      backgroundColor: user.color || '#ccc',
+                      marginRight: '8px'
+                    }}
+                  />
+                  {user.name || 'Anonymous'} {user.userid === userId && '(you)'}
+                </ListGroup.Item>
+              ))
+            ) : (
+              <ListGroup.Item>No users connected</ListGroup.Item>
+            )}
+          </ListGroup>
+        </div>
       </div>
     </div>
   );
