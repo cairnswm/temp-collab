@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useEditor } from './EditorContext';
-import { Button, ButtonGroup, Navbar, Container, Badge, Form, ListGroup } from 'react-bootstrap';
+import { Button, ButtonGroup, Navbar, Container, Badge, Form, ListGroup, InputGroup } from 'react-bootstrap';
 
 const Editor = () => {
   const editorRef = useRef();
-  const { ydoc, provider, ytext, status, users, userId, username, setUsername } = useEditor();
+  const { ydoc, provider, ytext, status, users, userId, username, setUsername, room, changeRoom, isLoading } = useEditor();
   const [editingUsername, setEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
+  const [newRoomName, setNewRoomName] = useState('');
   const [content, setContent] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -129,7 +130,7 @@ const Editor = () => {
         editorRef.current.removeEventListener('input', handleInput);
       }
     };
-  }, [ydoc, provider, ytext]);
+  }, [ydoc, provider, ytext, isInitialized]);
 
   const handleBold = () => {
     document.execCommand('bold', false, null);
@@ -151,6 +152,14 @@ const Editor = () => {
     if (tempUsername.trim()) {
       setUsername(tempUsername.trim());
       setEditingUsername(false);
+    }
+  };
+
+  const handleRoomSubmit = (e) => {
+    e.preventDefault();
+    if (newRoomName.trim()) {
+      changeRoom(newRoomName.trim());
+      setNewRoomName('');
     }
   };
 
@@ -192,6 +201,31 @@ const Editor = () => {
             </Navbar.Text>
           )}
           
+          <Navbar.Text className="me-3">
+            Room: {room}
+          </Navbar.Text>
+          
+          <Form onSubmit={handleRoomSubmit} className="d-flex me-3">
+            <InputGroup size="sm">
+              <Form.Control
+                type="text"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="Enter room name"
+                size="sm"
+                disabled={isLoading}
+              />
+              <Button 
+                variant="primary" 
+                size="sm" 
+                type="submit"
+                disabled={isLoading || !newRoomName.trim()}
+              >
+                {isLoading ? 'Connecting...' : 'Join Room'}
+              </Button>
+            </InputGroup>
+          </Form>
+          
           <Navbar.Text>
             Users Online: {users.length}
           </Navbar.Text>
@@ -210,17 +244,31 @@ const Editor = () => {
           </div>
 
           <div className="editor-container">
-            <div 
-              ref={editorRef} 
-              className="content-editable"
-              style={{ 
-                minHeight: '300px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px', 
-                padding: '10px',
-                outline: 'none'
-              }}
-            />
+            {isLoading ? (
+              <div 
+                className="d-flex justify-content-center align-items-center"
+                style={{ 
+                  minHeight: '300px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px', 
+                  padding: '10px'
+                }}
+              >
+                <div>Loading document...</div>
+              </div>
+            ) : (
+              <div 
+                ref={editorRef} 
+                className="content-editable"
+                style={{ 
+                  minHeight: '300px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px', 
+                  padding: '10px',
+                  outline: 'none'
+                }}
+              />
+            )}
           </div>
         </div>
         

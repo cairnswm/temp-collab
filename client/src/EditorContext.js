@@ -7,6 +7,12 @@ const EditorContext = createContext();
 
 export const useEditor = () => useContext(EditorContext);
 
+// Get room from URL or use default
+const getRoomFromUrl = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('room') || 'collaborative-editor';
+};
+
 // Generate a unique user ID
 const generateUserId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -18,6 +24,8 @@ export const EditorProvider = ({ children }) => {
   const [ytext, setYtext] = useState(null);
   const [status, setStatus] = useState('disconnected');
   const [users, setUsers] = useState([]);
+  const [room, setRoom] = useState(getRoomFromUrl());
+  const [isLoading, setIsLoading] = useState(false);
   
   // Get or create user ID
   const [userId] = useState(() => {
@@ -34,19 +42,50 @@ export const EditorProvider = ({ children }) => {
     return savedName || `User ${Math.floor(Math.random() * 100)}`;
   });
 
-  useEffect(() => {
-    // Initialize Y.js document
+  // Function to connect to a room
+  const connectToRoom = (roomName) => {
+    setIsLoading(true);
+    
+    // Clean up previous connection if it exists
+    if (provider) {
+      try {
+        if (provider.awareness) {
+          provider.awareness.setLocalState(null);
+        }
+        provider.disconnect();
+      } catch (e) {
+        console.error('Error disconnecting from previous room:', e);
+      }
+    }
+    
+    if (ydoc) {
+      try {
+        ydoc.destroy();
+      } catch (e) {
+        console.error('Error destroying previous document:', e);
+      }
+    }
+    
+    // Initialize new Y.js document
     const doc = new Y.Doc();
     const text = doc.getText('editor');
     setYdoc(doc);
     setYtext(text);
 
-    // Connect to the WebSocket server
+    // Connect to the WebSocket server with the specified room
     const wsProvider = new WebsocketProvider(
       'ws://localhost:1234',
-      'collaborative-editor',
+      roomName,
       doc
     );
+    
+    setIsLoading(false);
+    return wsProvider;
+  };
+  
+  // Connect to room when it changes
+  useEffect(() => {
+    const wsProvider = connectToRoom(room);
     
     // Give the provider a moment to initialize
     setTimeout(() => {
@@ -169,10 +208,14 @@ export const EditorProvider = ({ children }) => {
       } catch (e) {
         console.error('Error cleaning up:', e);
       }
-      wsProvider.disconnect();
-      doc.destroy();
+      
+      try {
+        wsProvider.disconnect();
+      } catch (e) {
+        console.error('Error disconnecting provider:', e);
+      }
     };
-  }, []);
+  }, [room, userId, username]);
 
   // Update user information when username changes
   useEffect(() => {
@@ -199,6 +242,17 @@ export const EditorProvider = ({ children }) => {
     }
   }, [username, provider, userId]);
 
+  // Function to change room
+  const changeRoom = (newRoom) => {
+    // Update URL without reloading the page
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', newRoom);
+    window.history.pushState({}, '', url);
+    
+    // Update room state
+    setRoom(newRoom);
+  };
+
   const value = {
     ydoc,
     provider,
@@ -208,6 +262,9 @@ export const EditorProvider = ({ children }) => {
     userId,
     username,
     setUsername,
+    room,
+    changeRoom,
+    isLoading
   };
 
   return (
