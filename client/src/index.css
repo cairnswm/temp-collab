@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.editor-container {
+  margin: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  min-height: 300px;
+}
+
+.ProseMirror {
+  position: relative;
+  outline: none;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+  padding: 10px;
+  min-height: 200px;
+}
+
+.ProseMirror p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.ProseMirror-focused {
+  border-color: #007bff;
+}
+
+.editor-toolbar {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}

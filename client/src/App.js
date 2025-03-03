@@ -1,15 +1,16 @@
-import React from 'react'
-//
-import {ProsemirrorEditor} from "./prosmirror/ProsemirrorEditor";
+import React from 'react';
+import { Container } from 'react-bootstrap';
+import { EditorProvider } from './EditorContext';
+import Editor from './Editor';
 
-
-function App() {
-
-    return (
-      <div>
-        <ProsemirrorEditor />
-      </div>
-    );
-}
+const App = () => {
+  return (
+    <Container fluid>
+      <EditorProvider>
+        <Editor />
+      </EditorProvider>
+    </Container>
+  );
+};
 
 export default App;
