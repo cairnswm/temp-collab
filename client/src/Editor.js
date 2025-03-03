@@ -5,13 +5,23 @@ import { Button, ButtonGroup, Navbar, Container, Badge } from 'react-bootstrap';
 const Editor = () => {
   const editorRef = useRef();
   const { ydoc, provider, ytext, status, users } = useEditor();
-  const [content, setContent] = useState('<p>Start typing here...</p>');
+  const [content, setContent] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (!ydoc || !provider || !ytext || !editorRef.current) return;
 
-    // Initialize the editor with the current content
-    editorRef.current.innerHTML = content;
+    // Initialize the editor with the current content from the shared document
+    const initialContent = ytext.toString();
+    const contentToUse = initialContent || '<p>Start typing here...</p>';
+    
+    editorRef.current.innerHTML = contentToUse;
+    setContent(contentToUse);
+    
+    // Mark as initialized after we've set the initial content
+    setIsInitialized(true);
+    
+    console.log('Editor initialized with content:', contentToUse);
     
     // Track if we're currently updating from a remote change
     let updatingFromRemote = false;
@@ -92,6 +102,20 @@ const Editor = () => {
           restoreCursorPosition(savedPosition);
           updatingFromRemote = false;
         }, 0);
+      }
+    });
+    
+    // Listen for sync events to know when we've received the initial document state
+    provider.on('sync', isSynced => {
+      if (isSynced && !isInitialized) {
+        console.log('Document synced, updating content from server');
+        const syncedContent = ytext.toString();
+        
+        if (syncedContent && syncedContent !== editorRef.current.innerHTML) {
+          editorRef.current.innerHTML = syncedContent;
+          setContent(syncedContent);
+          setIsInitialized(true);
+        }
       }
     });
     
