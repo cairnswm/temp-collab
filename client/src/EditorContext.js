@@ -10,12 +10,19 @@ export const useEditor = () => useContext(EditorContext);
 // Document type constants
 export const DOC_TYPES = {
   TEXT: 'text',
-  TODO: 'todo'
+  TODO: 'todo',
+  CANVAS: 'canvas'
 };
 
 // Determine document type based on room name
 const getDocumentType = (roomName) => {
-  return roomName === 'todo' ? DOC_TYPES.TODO : DOC_TYPES.TEXT;
+  if (roomName === 'todo') {
+    return DOC_TYPES.TODO;
+  } else if (roomName === 'canvas') {
+    return DOC_TYPES.CANVAS;
+  } else {
+    return DOC_TYPES.TEXT;
+  }
 };
 
 // Get room from URL or use default
@@ -34,6 +41,7 @@ export const EditorProvider = ({ children }) => {
   const [provider, setProvider] = useState(null);
   const [ytext, setYtext] = useState(null);
   const [ytodoList, setYtodoList] = useState(null);
+  const [ycanvasNotes, setYcanvasNotes] = useState(null);
   const [status, setStatus] = useState('disconnected');
   const [users, setUsers] = useState([]);
   const [room, setRoom] = useState(getRoomFromUrl());
@@ -91,10 +99,17 @@ export const EditorProvider = ({ children }) => {
       const text = doc.getText('editor');
       setYtext(text);
       setYtodoList(null);
+      setYcanvasNotes(null);
     } else if (newDocType === DOC_TYPES.TODO) {
       const todoList = doc.getArray('todoList');
       setYtodoList(todoList);
       setYtext(null);
+      setYcanvasNotes(null);
+    } else if (newDocType === DOC_TYPES.CANVAS) {
+      const canvasNotes = doc.getArray('canvasNotes');
+      setYcanvasNotes(canvasNotes);
+      setYtext(null);
+      setYtodoList(null);
     }
     
     setYdoc(doc);
@@ -285,6 +300,7 @@ export const EditorProvider = ({ children }) => {
     provider,
     ytext,
     ytodoList,
+    ycanvasNotes,
     status,
     users,
     userId,

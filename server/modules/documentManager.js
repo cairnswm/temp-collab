@@ -8,7 +8,8 @@ const documentTypes = new Map();
 // Document type constants
 const DOC_TYPES = {
   TEXT: 'text',
-  TODO: 'todo'
+  TODO: 'todo',
+  CANVAS: 'canvas'
 };
 
 const documentManager = {
@@ -54,6 +55,15 @@ const documentManager = {
             console.log('- Delta:', event.delta);
             console.log('- Current items count:', todoList.length);
           });
+        } else if (docType === DOC_TYPES.CANVAS) {
+          // Create canvas document with sticky notes
+          const canvasNotes = doc.getArray('canvasNotes');
+          
+          canvasNotes.observe(event => {
+            console.log(`Canvas notes update received in room ${roomName}:`);
+            console.log('- Delta:', event.delta);
+            console.log('- Current notes count:', canvasNotes.length);
+          });
         }
         
         rooms.set(roomName, doc);
@@ -90,6 +100,12 @@ const documentManager = {
   getDocumentTodoList: (roomName) => {
     const doc = rooms.get(roomName);
     return doc ? doc.getArray('todoList') : null;
+  },
+  
+  // Get the canvas notes shared type from a document
+  getDocumentCanvasNotes: (roomName) => {
+    const doc = rooms.get(roomName);
+    return doc ? doc.getArray('canvasNotes') : null;
   },
 
   // Delete a document for a room

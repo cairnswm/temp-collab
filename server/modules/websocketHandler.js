@@ -66,9 +66,14 @@ const websocketHandler = {
     roomManager.addConnectionToRoom(roomName, ws);
     
     // Determine document type based on room name
-    const docType = roomName === 'todo' 
-      ? documentManager.DOC_TYPES.TODO 
-      : documentManager.DOC_TYPES.TEXT;
+    let docType;
+    if (roomName === 'todo') {
+      docType = documentManager.DOC_TYPES.TODO;
+    } else if (roomName === 'canvas') {
+      docType = documentManager.DOC_TYPES.CANVAS;
+    } else {
+      docType = documentManager.DOC_TYPES.TEXT;
+    }
     
     // Get or create document for this room with the appropriate type
     documentManager.getOrCreateDocument(roomName, (doc) => {

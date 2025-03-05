@@ -3,6 +3,7 @@ import { Container } from 'react-bootstrap';
 import { EditorProvider, useEditor, DOC_TYPES } from './EditorContext';
 import Editor from './Editor';
 import TodoList from './components/todolist';
+import Canvas from './components/canvas';
 
 // Component to conditionally render the appropriate editor based on document type
 const DocumentEditor = () => {
@@ -12,6 +13,8 @@ const DocumentEditor = () => {
     <>
       {docType === DOC_TYPES.TODO ? (
         <TodoList />
+      ) : docType === DOC_TYPES.CANVAS ? (
+        <Canvas />
       ) : (
         <Editor />
       )}
