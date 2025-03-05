@@ -7,6 +7,17 @@ const EditorContext = createContext();
 
 export const useEditor = () => useContext(EditorContext);
 
+// Document type constants
+export const DOC_TYPES = {
+  TEXT: 'text',
+  TODO: 'todo'
+};
+
+// Determine document type based on room name
+const getDocumentType = (roomName) => {
+  return roomName === 'todo' ? DOC_TYPES.TODO : DOC_TYPES.TEXT;
+};
+
 // Get room from URL or use default
 const getRoomFromUrl = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -22,9 +33,11 @@ export const EditorProvider = ({ children }) => {
   const [ydoc, setYdoc] = useState(null);
   const [provider, setProvider] = useState(null);
   const [ytext, setYtext] = useState(null);
+  const [ytodoList, setYtodoList] = useState(null);
   const [status, setStatus] = useState('disconnected');
   const [users, setUsers] = useState([]);
   const [room, setRoom] = useState(getRoomFromUrl());
+  const [docType, setDocType] = useState(() => getDocumentType(getRoomFromUrl()));
   const [isLoading, setIsLoading] = useState(false);
   
   // Get or create user ID
@@ -45,6 +58,10 @@ export const EditorProvider = ({ children }) => {
   // Function to connect to a room
   const connectToRoom = (roomName) => {
     setIsLoading(true);
+    
+    // Determine document type based on room name
+    const newDocType = getDocumentType(roomName);
+    setDocType(newDocType);
     
     // Clean up previous connection if it exists
     if (provider) {
@@ -68,9 +85,19 @@ export const EditorProvider = ({ children }) => {
     
     // Initialize new Y.js document
     const doc = new Y.Doc();
-    const text = doc.getText('editor');
+    
+    // Initialize the appropriate shared type based on document type
+    if (newDocType === DOC_TYPES.TEXT) {
+      const text = doc.getText('editor');
+      setYtext(text);
+      setYtodoList(null);
+    } else if (newDocType === DOC_TYPES.TODO) {
+      const todoList = doc.getArray('todoList');
+      setYtodoList(todoList);
+      setYtext(null);
+    }
+    
     setYdoc(doc);
-    setYtext(text);
 
     // Connect to the WebSocket server with the specified room
     const wsProvider = new WebsocketProvider(
@@ -257,12 +284,14 @@ export const EditorProvider = ({ children }) => {
     ydoc,
     provider,
     ytext,
+    ytodoList,
     status,
     users,
     userId,
     username,
     setUsername,
     room,
+    docType,
     changeRoom,
     isLoading
   };
