@@ -4,6 +4,8 @@ const Y = require('yjs');
 const rooms = new Map();
 // Store document types for each room
 const documentTypes = new Map();
+// Store requested document types for new rooms
+const requestedDocTypes = new Map();
 
 // Document type constants
 const DOC_TYPES = {
@@ -19,6 +21,12 @@ const documentManager = {
   // Document type constants
   DOC_TYPES,
   
+  // Set requested document type for a room
+  setRequestedDocumentType: (roomName, docType) => {
+    requestedDocTypes.set(roomName, docType);
+    console.log(`Set requested document type for room ${roomName}: ${docType}`);
+  },
+  
   // Get document type for a room
   getDocumentType: (roomName) => {
     return documentTypes.get(roomName) || DOC_TYPES.TEXT; // Default to text for backward compatibility
@@ -27,6 +35,13 @@ const documentManager = {
   // Get or create a document for a room
   getOrCreateDocument: (roomName, callback, docType = DOC_TYPES.TEXT) => {
     if (!rooms.has(roomName)) {
+      // Check if there's a requested document type for this room
+      const requestedType = requestedDocTypes.get(roomName);
+      if (requestedType) {
+        docType = requestedType;
+        console.log(`Using requested document type for room ${roomName}: ${docType}`);
+      }
+      
       console.log(`Creating new document for room: ${roomName} with type: ${docType}`);
       
       // Simulate database fetch delay (0.5 seconds)

@@ -14,9 +14,19 @@ export const DOC_TYPES = {
   CANVAS: 'canvas'
 };
 
-// Determine document type based on room name
+// Get document type from URL or determine based on room name for backward compatibility
 const getDocumentType = (roomName) => {
-  if (roomName === 'todo') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const docTypeParam = urlParams.get('docType');
+  
+  if (docTypeParam === 'text') {
+    return DOC_TYPES.TEXT;
+  } else if (docTypeParam === 'todo') {
+    return DOC_TYPES.TODO;
+  } else if (docTypeParam === 'canvas') {
+    return DOC_TYPES.CANVAS;
+  } else if (roomName === 'todo') {
+    // Fallback to room name for backward compatibility
     return DOC_TYPES.TODO;
   } else if (roomName === 'canvas') {
     return DOC_TYPES.CANVAS;
@@ -115,11 +125,18 @@ export const EditorProvider = ({ children }) => {
     setYdoc(doc);
 
     // Connect to the WebSocket server with the specified room
+    // We'll include the document type as a URL parameter
+    const wsUrl = `ws://localhost:1234/${roomName}?docType=${newDocType}`;
+    console.log(`Connecting to WebSocket at: ${wsUrl}`);
+    
     const wsProvider = new WebsocketProvider(
-      'ws://localhost:1234',
+      wsUrl,
       roomName,
       doc
     );
+    
+    // We'll rely on the URL parameters for document type
+    // instead of custom messages to avoid interfering with Y.js protocol
     
     setIsLoading(false);
     return wsProvider;
@@ -183,15 +200,27 @@ export const EditorProvider = ({ children }) => {
       try {
         if (wsProvider && wsProvider.awareness) {
           const awarenessStates = Array.from(wsProvider.awareness.getStates().values());
-          const usersList = awarenessStates
+          
+          // Filter out states without user information
+          const usersWithInfo = awarenessStates
             .filter(state => state.user)
             .map(state => state.user || { 
               userid: 'anonymous', 
               name: 'Anonymous' 
             });
           
-          console.log('Users updated:', usersList);
-          setUsers(usersList);
+          // Remove duplicate users by userid
+          const uniqueUserIds = new Set();
+          const uniqueUsers = usersWithInfo.filter(user => {
+            if (!user.userid || uniqueUserIds.has(user.userid)) {
+              return false;
+            }
+            uniqueUserIds.add(user.userid);
+            return true;
+          });
+          
+          console.log('Users updated:', uniqueUsers);
+          setUsers(uniqueUsers);
         }
       } catch (e) {
         console.error('Error updating users list:', e);
@@ -294,6 +323,18 @@ export const EditorProvider = ({ children }) => {
     // Update room state
     setRoom(newRoom);
   };
+  
+  // Function to create a new room with a specific document type
+  const createRoom = (newRoom, newDocType) => {
+    // Update URL without reloading the page
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', newRoom);
+    url.searchParams.set('docType', newDocType);
+    window.history.pushState({}, '', url);
+    
+    // Update room state
+    setRoom(newRoom);
+  };
 
   const value = {
     ydoc,
@@ -309,6 +350,7 @@ export const EditorProvider = ({ children }) => {
     room,
     docType,
     changeRoom,
+    createRoom,
     isLoading
   };
 

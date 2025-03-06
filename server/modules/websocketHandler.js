@@ -65,9 +65,23 @@ const websocketHandler = {
     // Add this connection to the room
     roomManager.addConnectionToRoom(roomName, ws);
     
-    // Determine document type based on room name
+    // Parse URL to get document type parameter
+    const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
+    const requestedDocType = urlParams.get('docType');
+    
+    // Determine document type based on parameter or fallback to room name for backward compatibility
     let docType;
-    if (roomName === 'todo') {
+    if (requestedDocType === 'todo') {
+      docType = documentManager.DOC_TYPES.TODO;
+      documentManager.setRequestedDocumentType(roomName, documentManager.DOC_TYPES.TODO);
+    } else if (requestedDocType === 'canvas') {
+      docType = documentManager.DOC_TYPES.CANVAS;
+      documentManager.setRequestedDocumentType(roomName, documentManager.DOC_TYPES.CANVAS);
+    } else if (requestedDocType === 'text') {
+      docType = documentManager.DOC_TYPES.TEXT;
+      documentManager.setRequestedDocumentType(roomName, documentManager.DOC_TYPES.TEXT);
+    } else if (roomName === 'todo') {
+      // Fallback to room name for backward compatibility
       docType = documentManager.DOC_TYPES.TODO;
     } else if (roomName === 'canvas') {
       docType = documentManager.DOC_TYPES.CANVAS;
@@ -78,6 +92,11 @@ const websocketHandler = {
     // Get or create document for this room with the appropriate type
     documentManager.getOrCreateDocument(roomName, (doc) => {
       // Now that the document is ready, set up the connection
+      
+      // Get the actual document type (might be different if room already existed)
+      const actualDocType = documentManager.getDocumentType(roomName);
+      console.log(`Document type for room ${roomName}: ${actualDocType}`);
+      
       websocketHandler.setupRoomConnection(ws, req, roomName);
     }, docType);
     
